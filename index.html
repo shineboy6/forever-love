@@ -1,3 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>程子洢 — 爱意满屏</title>
+<style>
+  :root{
+    --bg-1:#0b0710;
+    --bg-2:#261025;
+    --card-bg: rgba(255,255,255,0.95);
+    --msg-color: #111112;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));font-family: 'Segoe UI', 'PingFang SC', system-ui, sans-serif;color:#fff;overflow:hidden}
+  /* canvas 背景 (花瓣/光效) */
+  canvas#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+  /* 中心心形 */
+  .center{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;
+    width:min(56vmin,640px);height:min(56vmin,640px);display:grid;align-items:center;justify-items:center;
+  }
+  .heart-svg{width:100%;height:100%;filter:drop-shadow(0 18px 40px rgba(0,0,0,0.6));animation:pulse 1400ms ease-in-out infinite}
+  @keyframes pulse{0%{transform:scale(0.98)}50%{transform:scale(1)}100%{transform:scale(0.98)}}
+  /* 弹幕容器 */
+  #barrage{position:fixed;inset:0;z-index:3;pointer-events:none}
+  .msg{
+    position:absolute;
+    pointer-events:auto;
+    background:var(--card-bg);
+    color:var(--msg-color);
+    padding:12px 14px;
+    border-radius:16px;
+    max-width:360px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.45);
+    opacity:0; transform:translateY(12px) scale(0.995);
+    transition:opacity 450ms ease, transform 450ms ease;
+    font-size:16px; line-height:1.4;
+  }
+  .msg.show{opacity:1;transform:translateY(0) scale(1)}
+  .controls{
+    position:fixed;right:18px;bottom:18px;z-index:6;display:flex;gap:10px;align-items:center;
+  }
+  .btn{
+    background:rgba(255,255,255,0.9);color:#111;border:0;padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:600;
+    box-shadow:0 6px 16px rgba(0,0,0,0.3);
+  }
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:reduce){.heart-svg, .msg{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<div class="center" aria-hidden="true">
+    <svg class="heart-svg" viewBox="0 0 100 100" role="img" aria-label="跳动的心形">
+    <defs>
+      <linearGradient id="g" x1="0" x2="1">
+        <stop offset="0%" stop-color="#ffb0c0"/>
+        <stop offset="100%" stop-color="#ff6a86"/>
+      </linearGradient>
+    </defs>
+    <g transform="translate(50,50) scale(0.9)">
+      <path d="M0 -22 C -12 -40 -40 -32 -40 -6 C -40 18 -4 36 0 46 C 4 36 40 18 40 -6 C 40 -32 12 -40 0 -22 Z" fill="url(#g)"></path>
+    </g>
+  </svg>
+</div>
+
+<div id="barrage" aria-live="polite" aria-atomic="true"></div>
+
+<div class="controls" role="region" aria-label="播放控制">
+  <button id="musicBtn" class="btn" aria-pressed="false" title="播放 / 暂停音乐">🎵 播放</button>
+  <button id="pauseBtn" class="btn" aria-pressed="false" title="暂停 / 恢复弹幕">⏯ 暂停弹幕</button>
+</div>
+
+<div id="sr" class="sr-only" aria-hidden="false"></div>
+
+
 <script>
 /* ---------------------
   使用说明
@@ -118,10 +196,10 @@ function findPositionFor(el){
   const existing = getVisibleRects();
   const margin = 20; // 统一边距
 
-  // [!GEMINI 优化] 核心修复：确保最大坐标 (x_max, y_max) 不会小于 0
-  // 这样 Math.random() * (一个正数) + margin 就能保证弹幕总在屏幕内
-  const x_max = Math.max(0, vw - w - margin * 2); 
-  const y_max = Math.max(0, vh - h - margin * 2);
+  // [!GEMINI 优化] 核心修复：确保最大坐标 (x_max, y_max) 不会小于 0
+  // 这样 Math.random() * (一个正数) + margin 就能保证弹幕总在屏幕内
+  const x_max = Math.max(0, vw - w - margin * 2); 
+  const y_max = Math.max(0, vh - h - margin * 2);
 
   for(let i=0;i<TRY_POS_ATTEMPTS;i++){
     const x = Math.random() * x_max + margin;
@@ -129,10 +207,10 @@ function findPositionFor(el){
     if(!overlaps(x,y,w,h,existing)) return {x,y};
   }
   // 如果尝试失败，仍返回一个安全的位置
-  return { 
-     x: Math.random() * x_max + margin, 
-     y: Math.random() * y_max + margin 
-   };
+  return { 
+     x: Math.random() * x_max + margin, 
+     y: Math.random() * y_max + margin 
+   };
 }
 
 /* 创建并显示单条消息 */
@@ -142,28 +220,28 @@ function showSingleMessage(text){
   el.tabIndex = 0;
   el.textContent = text;
   el.dataset.dismiss = '0';
-  
-  // [!GEMINI 优化] 声明一个计时器变量和移除函数
-  let removalTimer = null;
+  
+  // [!GEMINI 优化] 声明一个计时器变量和移除函数
+  let removalTimer = null;
 
-  const removeMsg = () => {
-    if (el.dataset.dismiss === '1') return; // 防止重复执行
-    el.dataset.dismiss = '1';
-    el.classList.remove('show');
-    if (removalTimer) clearTimeout(removalTimer);
-    setTimeout(() => el.remove(), 420); // 420ms 后从 DOM 移除
-  };
+  const removeMsg = () => {
+    if (el.dataset.dismiss === '1') return; // 防止重复执行
+    el.dataset.dismiss = '1';
+    el.classList.remove('show');
+    if (removalTimer) clearTimeout(removalTimer);
+    setTimeout(() => el.remove(), 420); // 420ms 后从 DOM 移除
+  };
 
-  // [!GEMINI 优化] 启动定时器
-  const startRemovalTimer = () => {
-    if (removalTimer) clearTimeout(removalTimer);
-    removalTimer = setTimeout(removeMsg, DISPLAY_TIME);
-  };
-  
-  // 暂放到 DOM 以便测量宽高
+  // [!GEMINI 优化] 启动定时器
+  const startRemovalTimer = () => {
+    if (removalTimer) clearTimeout(removalTimer);
+    removalTimer = setTimeout(removeMsg, DISPLAY_TIME);
+  };
+  
+  // 暂放到 DOM 以便测量宽高
   barrage.appendChild(el);
-  
-  // [!GEMINI 优化] 修复了 Escape 键功能
+  
+  // [!GEMINI 优化] 修复了 Escape 键功能
   el.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ removeMsg(); } });
 
   // 决定位置（避免重叠）
@@ -178,21 +256,21 @@ function showSingleMessage(text){
     requestAnimationFrame(()=> el.classList.add('show'));
     // 音频辅助：读出到 screen reader
     sr.textContent = text;
-    
-    // [!GEMINI 优化] 启动自动移除
-    startRemovalTimer();
-    
+    
+    // [!GEMINI 优化] 启动自动移除
+    startRemovalTimer();
+    
     // [!GEMINI 优化] 真正实现鼠标悬停延长显示
     el.addEventListener('mouseenter', () => {
       if(el.dataset.dismiss==='0'){
-          if (removalTimer) clearTimeout(removalTimer); // 悬停时，清除销毁计时器
-      }
+          if (removalTimer) clearTimeout(removalTimer); // 悬停时，清除销毁计时器
+      }
     });
-    el.addEventListener('mouseleave', ()=> { 
-      if(el.dataset.dismiss==='0'){
-          startRemovalTimer(); // 鼠标移走，重新开始计时
-      }
-    });
+    el.addEventListener('mouseleave', ()=> { 
+      if(el.dataset.dismiss==='0'){
+          startRemovalTimer(); // 鼠标移走，重新开始计时
+      }
+    });
   });
 }
 
@@ -216,7 +294,7 @@ function showBatch(){
   const canShow = MAX_SIMULTANEOUS - currentVisible;
   toShow = Math.min(toShow, canShow);
   for(let i=0;i<toShow;i++){
-    if(pool.length===0) refillPool(); // 池空了就重置
+    if(pool.length===0) refillPool(); // 池了就重置
     const item = pool.pop();
     showSingleMessage(item);
   }
@@ -268,7 +346,7 @@ let W = canvas.width = innerWidth;
 let H = canvas.height = innerHeight;
 window.addEventListener('resize', ()=>{ W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
 const petals = [];
-for(let i=0;i<48;i++) petals.push(makePetal());
+for(let i=0;iPlayeri<48;i++) petals.push(makePetal());
 
 function makePetal(){
   return {
@@ -325,3 +403,6 @@ audio.addEventListener('error', (e)=> {
 window.addEventListener('beforeunload', ()=>{ if(loopTimer) clearInterval(loopTimer); });
 
 </script>
+
+</body>
+</html>
