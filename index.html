@@ -77,332 +77,315 @@
 
 
 <script>
-/* ---------------------
-  使用说明
-  - 请把音乐文件命名为 special_person.mp3 并与此 HTML 放在同一目录。
-  - 双击打开文件或部署到静态服务器即可。
-----------------------*/
+// [!GEMINI 终极修复]
+// 我们把所有代码都放进这个 'DOMContentLoaded' 事件里。
+// 这能保证 HTML 页面（按钮、画布等）完全加载完毕后，JS 才会开始运行。
+// 这将彻底解决 'Cannot read properties of null' 错误。
+document.addEventListener('DOMContentLoaded', () => {
 
-/* 消息池（你提供的那些句子） */
-const ORIGINAL_MESSAGES = [
-  '贝贝，你在我眼中是最美。',
-  '和你在一起仿佛世界被点亮了。',
-  '我想让你无时无刻都想和我在一起，就像我想你那样。',
-  '你不用担心我们的爱意会被时间消磨，因为每天醒来都会被注入更多爱意，只会越来越多。',
-  '我在乎的是你舒不舒服健不健康，而不是美不美瘦不瘦，所以希望你好好吃饭好好睡觉。',
-  '我爱你。',
-  '一生一世一双人，一心一意一个人。',
-  '因为你我相信我的未来一定会过得很好。',
-  '洢洢宝贝每天都开心。',
-  '缘定此生，缘定此人。',
-  '每一次心跳都是爱你的回响。',
-  '我俩天下第一好！',
-  '要这样一直幸福下去。',
-  '爱上了你，从此眼中再无他人。',
-  '爱人对我来说不是选择题，而是用心打磨后的填空，心上有了你就已经交卷了，我希望你也是。',
-  '我想成为你的唯一，因为你对我来说就是。',
-  '程子洢，我想一直和你在一起。'
-];
+    /* ---------------------
+      使用说明
+      - 请把音乐文件命名为 special_person.mp3 并与此 HTML 放在同一目录。
+      - 双击打开文件或部署到静态服务器即可。
+    ----------------------*/
 
-/* 配置 */
-const DISPLAY_TIME = 7000;      // 每条消息停留 (ms)
-const MAX_SIMULTANEOUS = 3;    // 屏幕上最多几条消息
-const INITIAL_BURST = 6;       // 初始铺面条数
-const BATCH_MIN = 2;           // 每次展示最少条数
-const BATCH_MAX = 3;           // 每次展示最多条数
-const TRY_POS_ATTEMPTS = 12;   // 找不重叠位置尝试次数
+    /* 消息池（你提供的那些句子） */
+    const ORIGINAL_MESSAGES = [
+      '贝贝，你在我眼中是最美。',
+      '和你在一起仿佛世界被点亮了。',
+      '我想让你无时无刻都想和我在一起，就像我想你那样。',
+      '你不用担心我们的爱意会被时间消磨，因为每天醒来都会被注入更多爱意，只会越来越多。',
+      '我在乎的是你舒不舒服健不健康，而不是美不美瘦不瘦，所以希望你好好吃饭好好睡觉。',
+      '我爱你。',
+      '一生一世一双人，一心一意一个人。',
+      '因为你我相信我的未来一定会过得很好。',
+      '洢洢宝贝每天都开心。',
+      '缘定此生，缘定此人。',
+      '每一次心跳都是爱你的回响。',
+      '我俩天下第一好！',
+      '要这样一直幸福下去。',
+      '爱上了你，从此眼中再无他人。',
+      '爱人对我来说不是选择题，而是用心打磨后的填空，心上有了你就已经交卷了，我希望你也是。',
+      '我想成为你的唯一，因为你对我来说就是。',
+      '程子洢，我想一直和你在一起。'
+    ];
 
-/* DOM */
-const barrage = document.getElementById('barrage');
-const sr = document.getElementById('sr');
-const musicBtn = document.getElementById('musicBtn');
-const pauseBtn = document.getElementById('pauseBtn');
+    /* 配置 */
+    const DISPLAY_TIME = 7000;      // 每条消息停留 (ms)
+    const MAX_SIMULTANEOUS = 3;    // 屏幕上最多几条消息
+    const INITIAL_BURST = 6;       // 初始铺面条数
+    const BATCH_MIN = 2;           // 每次展示最少条数
+    const BATCH_MAX = 3;           // 每次展示最多条数
+    const TRY_POS_ATTEMPTS = 12;   // 找不重叠位置尝试次数
 
-/* 音乐：尝试加载同目录的 special_person.mp3 */
-// [!GEMINI 优化] 使用 './' 明确指定当前目录，这在某些服务器上更稳定。
-// [!GEMINI 优化] 确保你的文件名在 GitHub 上 *完全* 匹配 'special_person.mp3'（大小写）
-const audio = new Audio('./special_person.mp3');
-audio.preload = 'auto';
-audio.volume = 0.32;
-let audioPlayed = false; // 我们希望播放一次
+    /* DOM */
+    // [!GEMINI 终极修复] 现在这些 DOM 元素一定能被找到了
+    const barrage = document.getElementById('barrage');
+    const sr = document.getElementById('sr');
+    const musicBtn = document.getElementById('musicBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const canvas = document.getElementById('bg'); // [!GEMINI 修复] 把 canvas 也移到这里
+    const ctx = canvas.getContext('2d');         // [!GEMINI 修复]
 
-audio.addEventListener('ended', ()=>{
-  // 播放一次后不循环
-  audioPlayed = true;
-  musicBtn.textContent = '🎵 播放';
-  musicBtn.setAttribute('aria-pressed','false');
-});
+    /* 音乐：尝试加载同目录的 special_person.mp3 */
+    const audio = new Audio('./special_person.mp3');
+    audio.preload = 'auto';
+    audio.volume = 0.32;
+    let audioPlayed = false; 
 
-/* 当页面允许自动播放失败时，用户点击播放按钮即可 */
-musicBtn.addEventListener('click', async ()=>{
-  if (audio.paused && !audioPlayed) {
-    try {
-      await audio.play();
-      musicBtn.textContent = '🔇 暂停';
-      musicBtn.setAttribute('aria-pressed','true');
-    } catch(e) {
-      // 浏览器阻止，提示用户与页面交互
-      alert('浏览器阻止自动播放。请先允许或在页面点击播放。');
-    }
-  } else {
-    audio.pause();
-    musicBtn.textContent = '🎵 播放';
-    musicBtn.setAttribute('aria-pressed','false');
-  }
-});
+    audio.addEventListener('ended', ()=>{
+      audioPlayed = true;
+      musicBtn.textContent = '🎵 播放';
+      musicBtn.setAttribute('aria-pressed','false');
+    });
 
-/* 尝试在加载时自动播放（多浏览器可能被阻止） */
-window.addEventListener('load', ()=>{
-  audio.play().then(()=>{ musicBtn.textContent='🔇 暂停'; musicBtn.setAttribute('aria-pressed','true'); })
-    .catch(()=>{/*无动作：等待用户点击*/});
-});
+    /* 当页面允许自动播放失败时，用户点击播放按钮即可 */
+    musicBtn.addEventListener('click', async ()=>{
+      if (audio.paused && !audioPlayed) {
+        try {
+          await audio.play();
+          musicBtn.textContent = '🔇 暂停';
+          musicBtn.setAttribute('aria-pressed','true');
+        } catch(e) {
+          alert('浏览器阻止自动播放。请先允许或在页面点击播放。');
+        }
+      } else {
+        audio.pause();
+        musicBtn.textContent = '🎵 播放';
+        musicBtn.setAttribute('aria-pressed','false');
+      }
+    });
 
-/* 弹幕消息管理：随机抽取且无重复直到池空 */
-let pool = [];
-function refillPool(){ pool = shuffle([...ORIGINAL_MESSAGES]); }
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]] = [arr[j],arr[i]];
-  }
-  return arr;
-}
-refillPool();
+    /* 尝试在加载时自动播放（多浏览器可能被阻止） */
+    window.addEventListener('load', ()=>{
+      audio.play().then(()=>{ musicBtn.textContent='🔇 暂停'; musicBtn.setAttribute('aria-pressed','true'); })
+        .catch(()=>{/*无动作：等待用户点击*/});
+    });
 
-/* 当前可见消息元素列表（用于碰撞检测） */
-function getVisibleRects(){
-  return Array.from(barrage.children).filter(c=>c.dataset.dismiss!=='1').map(el=>{
-    const r=el.getBoundingClientRect();
-    return {el, left:r.left, right:r.right, top:r.top, bottom:r.bottom};
-  });
-}
+    /* 弹幕消息管理：随机抽取且无重复直到池空 */
+    let pool = [];
+    function refillPool(){ pool = shuffle([...ORIGINAL_MESSAGES]); }
+    function shuffle(arr){
+      for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]] = [arr[j],arr[i]];
+      }
+      return arr;
+    }
+    refillPool();
 
-/* 检测与现有消息是否重叠（留出 margin） */
-function overlaps(x,y,w,h,existing,margin=8){
-  for(const e of existing){
-    if(!(x + w + margin < e.left || x > e.right + margin || y + h + margin < e.top || y > e.bottom + margin)){
-      return true;
-    }
-  }
-  return false;
-}
+    /* 当前可见消息元素列表（用于碰撞检测） */
+    function getVisibleRects(){
+      return Array.from(barrage.children).filter(c=>c.dataset.dismiss!=='1').map(el=>{
+        const r=el.getBoundingClientRect();
+        return {el, left:r.left, right:r.right, top:r.top, bottom:r.bottom};
+      });
+    }
 
-/* [!GEMINI 优化] 修正了定位算法，防止在小屏幕上坐标为负 */
-function findPositionFor(el){
-  const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-  const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-  const rect = el.getBoundingClientRect();
-  const w = rect.width, h = rect.height;
-  const existing = getVisibleRects();
-  const margin = 20; // 统一边距
+    /* 检测与现有消息是否重叠（留出 margin） */
+    function overlaps(x,y,w,h,existing,margin=8){
+      for(const e of existing){
+        if(!(x + w + margin < e.left || x > e.right + margin || y + h + margin < e.top || y > e.bottom + margin)){
+          return true;
+        }
+      }
+      return false;
+    }
 
-  // [!GEMINI 优化] 核心修复：确保最大坐标 (x_max, y_max) 不会小于 0
-  // 这样 Math.random() * (一个正数) + margin 就能保证弹幕总在屏幕内
-  const x_max = Math.max(0, vw - w - margin * 2); 
-  const y_max = Math.max(0, vh - h - margin * 2);
+    /* [!GEMINI 优化] 修正了定位算法，防止在小屏幕上坐标为负 */
+    function findPositionFor(el){
+      const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+      const rect = el.getBoundingClientRect();
+      const w = rect.width, h = rect.height;
+      const existing = getVisibleRects();
+      const margin = 20; 
 
-  for(let i=0;i<TRY_POS_ATTEMPTS;i++){
-    const x = Math.random() * x_max + margin;
-    const y = Math.random() * y_max + margin;
-    if(!overlaps(x,y,w,h,existing)) return {x,y};
-  }
-  // 如果尝试失败，仍返回一个安全的位置
-  return { 
-     x: Math.random() * x_max + margin, 
-     y: Math.random() * y_max + margin 
-   };
-}
+      const x_max = Math.max(0, vw - w - margin * 2); 
+      const y_max = Math.max(0, vh - h - margin * 2);
 
-/* 创建并显示单条消息 */
-function showSingleMessage(text){
-  const el = document.createElement('div');
-  el.className = 'msg';
-  el.tabIndex = 0;
-  el.textContent = text;
-  el.dataset.dismiss = '0';
-  
-  // [!GEMINI 优化] 声明一个计时器变量和移除函数
-  let removalTimer = null;
+      for(let i=0;i<TRY_POS_ATTEMPTS;i++){
+        const x = Math.random() * x_max + margin;
+        const y = Math.random() * y_max + margin;
+        if(!overlaps(x,y,w,h,existing)) return {x,y};
+      }
+      return { 
+         x: Math.random() * x_max + margin, 
+         y: Math.random() * y_max + margin 
+       };
+    }
 
-  const removeMsg = () => {
-    if (el.dataset.dismiss === '1') return; // 防止重复执行
-    el.dataset.dismiss = '1';
-    el.classList.remove('show');
-    if (removalTimer) clearTimeout(removalTimer);
-    setTimeout(() => el.remove(), 420); // 420ms 后从 DOM 移除
-  };
+    /* 创建并显示单条消息 */
+    function showSingleMessage(text){
+      const el = document.createElement('div');
+      el.className = 'msg';
+      el.tabIndex = 0;
+      el.textContent = text;
+      el.dataset.dismiss = '0';
+      
+      let removalTimer = null;
 
-  // [!GEMINI 优化] 启动定时器
-  const startRemovalTimer = () => {
-    if (removalTimer) clearTimeout(removalTimer);
-    removalTimer = setTimeout(removeMsg, DISPLAY_TIME);
-  };
-  
-  // 暂放到 DOM 以便测量宽高
-  barrage.appendChild(el);
-  
-  // [!GEMINI 优化] 修复了 Escape 键功能
-  el.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ removeMsg(); } });
+      const removeMsg = () => {
+        if (el.dataset.dismiss === '1') return;
+        el.dataset.dismiss = '1';
+        el.classList.remove('show');
+        if (removalTimer) clearTimeout(removalTimer);
+        setTimeout(() => el.remove(), 420);
+      };
 
-  // 决定位置（避免重叠）
-  requestAnimationFrame(()=>{
-    const pos = findPositionFor(el);
-    el.style.left = pos.x + 'px';
-    el.style.top = pos.y + 'px';
-    // 视觉随机轻微色调
-    el.style.background = randomSoftBackground();
-    el.style.color = '#0b0b0b';
-    // show
-    requestAnimationFrame(()=> el.classList.add('show'));
-    // 音频辅助：读出到 screen reader
-    sr.textContent = text;
-    
-    // [!GEMINI 优化] 启动自动移除
-    startRemovalTimer();
-    
-    // [!GEMINI 优化] 真正实现鼠标悬停延长显示
-    el.addEventListener('mouseenter', () => {
-      if(el.dataset.dismiss==='0'){
-          if (removalTimer) clearTimeout(removalTimer); // 悬停时，清除销毁计时器
-      }
-    });
-    el.addEventListener('mouseleave', ()=> { 
-      if(el.dataset.dismiss==='0'){
-          startRemovalTimer(); // 鼠标移走，重新开始计时
-      }
-    });
-  });
-}
+      const startRemovalTimer = () => {
+        if (removalTimer) clearTimeout(removalTimer);
+        removalTimer = setTimeout(removeMsg, DISPLAY_TIME);
+      };
+      
+      barrage.appendChild(el);
+      
+      el.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ removeMsg(); } });
 
-/* 生成柔和背景色（HSL） */
-function randomSoftBackground(){
-  const h = Math.floor(330 + Math.random()*40); // pink range
-  const s = 70 + Math.floor(Math.random()*10);
-  const l = 85 - Math.floor(Math.random()*6);
-  return `hsl(${h} ${s}% ${l}%)`;
-}
+      requestAnimationFrame(()=>{
+        const pos = findPositionFor(el);
+        el.style.left = pos.x + 'px';
+        el.style.top = pos.y + 'px';
+        el.style.background = randomSoftBackground();
+        el.style.color = '#0b0b0b';
+        requestAnimationFrame(()=> el.classList.add('show'));
+        sr.textContent = text;
+        startRemovalTimer();
+        
+        el.addEventListener('mouseenter', () => {
+          if(el.dataset.dismiss==='0'){
+              if (removalTimer) clearTimeout(removalTimer);
+          }
+        });
+        el.addEventListener('mouseleave', ()=> { 
+          if(el.dataset.dismiss==='0'){
+              startRemovalTimer();
+          }
+        });
+      });
+    }
 
-/* 展示一批消息（从池中抽取，不重复） */
-function showBatch(){
-  if(paused) return;
-  const currentVisible = barrage.children.length;
-  if(currentVisible >= MAX_SIMULTANEOUS) return; // 达到并发上限，等下次
-  // batch size 随机在 min..max，但也不要超过剩余可显示位
-  const batchSize = Math.min(BATCH_MAX, Math.max(BATCH_MIN, Math.floor(Math.random()*(BATCH_MAX - BATCH_MIN + 1)) + BATCH_MIN - 1));
-  let toShow = batchSize;
-  // ensure not exceeding MAX_SIMULTANEOUS
-  const canShow = MAX_SIMULTANEOUS - currentVisible;
-  toShow = Math.min(toShow, canShow);
-  for(let i=0;i<toShow;i++){
-    if(pool.length===0) refillPool(); // 池了就重置
-    const item = pool.pop();
-    showSingleMessage(item);
-  }
-}
+    /* 生成柔和背景色（HSL） */
+    function randomSoftBackground(){
+      const h = Math.floor(330 + Math.random()*40); 
+      const s = 70 + Math.floor(Math.random()*10);
+      const l = 85 - Math.floor(Math.random()*6);
+      return `hsl(${h} ${s}% ${l}%)`;
+    }
 
-/* 初始快速铺面（开场） */
-function initialBurst(){
-  let t = 120;
-  for(let i=0;i<INITIAL_BURST;i++){
-    setTimeout(()=>{
-      if(pool.length===0) refillPool();
-      const item = pool.pop();
-      showSingleMessage(item);
-    }, t);
-    t += 220;
-  }
-}
+    /* 展示一批消息（从池中抽取，不重复） */
+    function showBatch(){
+      if(paused) return;
+      const currentVisible = barrage.children.length;
+      if(currentVisible >= MAX_SIMULTANEOUS) return;
+      const batchSize = Math.min(BATCH_MAX, Math.max(BATCH_MIN, Math.floor(Math.random()*(BATCH_MAX - BATCH_MIN + 1)) + BATCH_MIN - 1));
+      let toShow = batchSize;
+      const canShow = MAX_SIMULTANEOUS - currentVisible;
+      toShow = Math.min(toShow, canShow);
+      for(let i=0;i<toShow;i++){
+        if(pool.length===0) refillPool();
+        const item = pool.pop();
+        showSingleMessage(item);
+      }
+    }
 
-/* 循环节奏：每 2.6s 尝试一次展示（但会遵守并发上限和池状态），主循环 */
-let loopTimer = null;
-let paused = false;
-function startLoop(){
-  if(loopTimer) clearInterval(loopTimer);
-  loopTimer = setInterval(()=>{
-    // 只有在页面可见且非暂停时展示
-    if(document.hidden || paused) return;
-    showBatch();
-  }, 2600);
-}
+    /* 初始快速铺面（开场） */
+    function initialBurst(){
+      let t = 120;
+      for(let i=0;i<INITIAL_BURST;i++){
+        setTimeout(()=>{
+          if(pool.length===0) refillPool();
+          const item = pool.pop();
+          showSingleMessage(item);
+        }, t);
+        t += 220;
+      }
+    }
 
-/* 暂停/继续 弹幕 */
-pauseBtn.addEventListener('click', ()=>{
-  paused = !paused;
-  pauseBtn.setAttribute('aria-pressed', String(paused));
-  pauseBtn.textContent = paused ? '▶ 恢复弹幕' : '⏯ 暂停弹幕';
-});
+    /* 循环节奏：每 2.6s 尝试一次展示（但会遵守并发上限和池状态），主循环 */
+    let loopTimer = null;
+    let paused = false;
+    function startLoop(){
+      if(loopTimer) clearInterval(loopTimer);
+      loopTimer = setInterval(()=>{
+        if(document.hidden || paused) return;
+        showBatch();
+      }, 2600);
+    }
 
-/* 键盘快捷：空格切换弹幕暂停，M 清空屏读文本 */
-window.addEventListener('keydown', (e)=>{
-  if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA')) return;
-  if(e.code === 'Space'){ e.preventDefault(); paused = !paused; pauseBtn.setAttribute('aria-pressed', String(paused)); pauseBtn.textContent = paused ? '▶ 恢复弹幕' : '⏯ 暂停弹幕'; }
-  if(e.key.toLowerCase() === 'm' && e.ctrlKey){ sr.textContent=''; }
-});
+    /* 暂停/继续 弹幕 */
+    pauseBtn.addEventListener('click', ()=>{
+      paused = !paused;
+      pauseBtn.setAttribute('aria-pressed', String(paused));
+      pauseBtn.textContent = paused ? '▶ 恢复弹幕' : '⏯ 暂停弹幕';
+    });
 
-/* 背景花瓣 / 粒子 （简洁） */
-const canvas = document.getElementById('bg');
-const ctx = canvas.getContext('2d');
-let W = canvas.width = innerWidth;
-let H = canvas.height = innerHeight;
-window.addEventListener('resize', ()=>{ W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
-const petals = [];
-for(let i=0;iPlayeri<48;i++) petals.push(makePetal());
+    /* 键盘快捷：空格切换弹幕暂停，M 清空屏读文本 */
+    window.addEventListener('keydown', (e)=>{
+      if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA')) return;
+      if(e.code === 'Space'){ e.preventDefault(); paused = !paused; pauseBtn.setAttribute('aria-pressed', String(paused)); pauseBtn.textContent = paused ? '▶ 恢复弹幕' : '⏯ 暂停弹幕'; }
+      if(e.key.toLowerCase() === 'm' && e.ctrlKey){ sr.textContent=''; }
+    });
 
-function makePetal(){
-  return {
-    x: Math.random()*W,
-    y: Math.random()*H,
-    r: 6 + Math.random()*10,
-    vx: -0.3 + Math.random()*0.6,
-    vy: 0.2 + Math.random()*0.8,
-    rot: Math.random()*Math.PI*2,
-    rotSpeed: (Math.random()-0.5)*0.02,
-    hue: 330 + Math.random()*30,
-    alpha: 0.6 + Math.random()*0.3,
-  };
-}
+    /* 背景花瓣 / 粒子 （简洁） */
+    let W = canvas.width = innerWidth;
+    let H = canvas.height = innerHeight;
+    window.addEventListener('resize', ()=>{ W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
+    const petals = [];
+    for(let i=0;i<48;i++) petals.push(makePetal());
 
-function drawBg(){
-  ctx.clearRect(0,0,W,H);
-  for(const p of petals){
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.rot);
-    ctx.fillStyle = `hsla(${p.hue},70%,85%,${p.alpha})`;
-    // petal shape as ellipse
-    ctx.beginPath();
-    ctx.ellipse(0, 0, p.r*0.9, p.r*0.6, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-    p.x += p.vx + Math.sin(p.y/30)*0.2;
-    p.y += p.vy;
-    p.rot += p.rotSpeed;
-    if(p.y > H + 20){ Object.assign(p, makePetal()); p.y = -20; p.x = Math.random()*W; }
-    if(p.x < -30) p.x = W + 30;
-    if(p.x > W + 30) p.x = -30;
-  }
-  requestAnimationFrame(drawBg);
-}
+    function makePetal(){
+      return {
+        x: Math.random()*W,
+        y: Math.random()*H,
+        r: 6 + Math.random()*10,
+        vx: -0.3 + Math.random()*0.6,
+        vy: 0.2 + Math.random()*0.8,
+        rot: Math.random()*Math.PI*2,
+        rotSpeed: (Math.random()-0.5)*0.02,
+        hue: 330 + Math.random()*30,
+        alpha: 0.6 + Math.random()*0.3,
+      };
+    }
 
-/* 启动流程 */
-initialBurst();
-startLoop();
-drawBg();
+    function drawBg(){
+      ctx.clearRect(0,0,W,H);
+      for(const p of petals){
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = `hsla(${p.hue},70%,85%,${p.alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.r*0.9, p.r*0.6, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+        p.x += p.vx + Math.sin(p.y/30)*0.2;
+        p.y += p.vy;
+        p.rot += p.rotSpeed;
+        if(p.y > H + 20){ Object.assign(p, makePetal()); p.y = -20; p.x = Math.random()*W; }
+        if(p.x < -30) p.x = W + 30;
+        if(p.x > W + 30) p.x = -30;
+      }
+      requestAnimationFrame(drawBg);
+    }
 
-/* 自动开始音乐播放：播放一次后不循环（浏览器可能阻止自动播放） */
-/* 若要“仅播放一次”，我们不设置 loop，监听 ended 事件 */
-audio.addEventListener('error', (e)=> {
-  // 如果找不到 or 播放失败，隐藏音乐按钮提示
-  musicBtn.textContent = '🎵 (文件未就绪)';
-});
-/* 若浏览器阻止自动播放，则用户点击 musicBtn 可以触发播放（上面绑定了 play/pause） */
+    /* 启动流程 */
+    initialBurst();
+    startLoop();
+    drawBg();
 
-/* 小功能：首次循环开始时尽量在第一轮内播放所有消息（通过池逻辑已保证） */
+    /* 自动开始音乐播放 */
+    audio.addEventListener('error', (e)=> {
+      musicBtn.textContent = '🎵 (文件未就绪)';
+    });
 
-/* 清理：当页面卸载，停止定时器 */
-window.addEventListener('beforeunload', ()=>{ if(loopTimer) clearInterval(loopTimer); });
+    /* 清理：当页面卸载，停止定时器 */
+    window.addEventListener('beforeunload', ()=>{ if(loopTimer) clearInterval(loopTimer); });
 
+// [!GEMINI 终极修复] 确保括号闭合
+}); 
 </script>
 
 </body>
 </html>
+
