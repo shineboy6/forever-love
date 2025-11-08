@@ -82,12 +82,6 @@
 // 这能保证 HTML 页面（按钮、画布等）完全加载完毕后，JS 才会开始运行。
 document.addEventListener('DOMContentLoaded', () => {
 
-    /* ---------------------
-      使用说明
-      - 请把音乐文件命名为 special_person.mp3 并与此 HTML 放在同一目录。
-      - 双击打开文件或部署到静态服务器即可。
-    ----------------------*/
-
     /* 消息池 */
     const ORIGINAL_MESSAGES = [
       '贝贝，你在我眼中是最美。',
@@ -117,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const BATCH_MAX = 3;          
     const TRY_POS_ATTEMPTS = 12;   
 
-    /* DOM */
+    /* DOM (现在一定能找到了) */
     const barrage = document.getElementById('barrage');
     const sr = document.getElementById('sr');
     const musicBtn = document.getElementById('musicBtn');
