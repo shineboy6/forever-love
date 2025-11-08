@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>程子洢 — 爱意满屏</title>
+<title>程子洢-罗志鑫，牵手到永远</title>
 <style>
   :root{
     --bg-1:#0b0710;
@@ -118,42 +118,57 @@ const sr = document.getElementById('sr');
 const musicBtn = document.getElementById('musicBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 
-/* 音乐：尝试加载同目录的 special_person.mp3 */
-const audio = new Audio('special_person.mp3');
+/* === 音乐播放控制脚本（使用 GitHub Release 外链） === */
+
+// ✅ 外链直链地址（修改为你真实的 release 直链）
+const audio = new Audio('https://github.com/shineboy6/forever-love/releases/download/v1.0/special_person.mp3');
+
+// 预加载与音量设置
 audio.preload = 'auto';
 audio.volume = 0.32;
-let audioPlayed = false; // 我们希望播放一次
 
-audio.addEventListener('ended', ()=>{
-  // 播放一次后不循环
+// 播放状态
+let audioPlayed = false;
+
+// 获取播放按钮
+const musicBtn = document.getElementById('musicBtn');
+
+/* === 事件监听 === */
+
+// 音乐播放结束后（只播放一次）
+audio.addEventListener('ended', () => {
   audioPlayed = true;
   musicBtn.textContent = '🎵 播放';
-  musicBtn.setAttribute('aria-pressed','false');
+  musicBtn.setAttribute('aria-pressed', 'false');
 });
 
-/* 当页面允许自动播放失败时，用户点击播放按钮即可 */
-musicBtn.addEventListener('click', async ()=>{
+/* === 点击播放按钮 === */
+musicBtn.addEventListener('click', async () => {
   if (audio.paused && !audioPlayed) {
     try {
       await audio.play();
       musicBtn.textContent = '🔇 暂停';
-      musicBtn.setAttribute('aria-pressed','true');
-    } catch(e) {
-      // 浏览器阻止，提示用户与页面交互
-      alert('浏览器阻止自动播放。请先允许或在页面点击播放。');
+      musicBtn.setAttribute('aria-pressed', 'true');
+    } catch (e) {
+      alert('浏览器阻止自动播放，请点击播放按钮。');
     }
   } else {
     audio.pause();
     musicBtn.textContent = '🎵 播放';
-    musicBtn.setAttribute('aria-pressed','false');
+    musicBtn.setAttribute('aria-pressed', 'false');
   }
 });
 
-/* 尝试在加载时自动播放（多浏览器可能被阻止） */
-window.addEventListener('load', ()=>{
-  audio.play().then(()=>{ musicBtn.textContent='🔇 暂停'; musicBtn.setAttribute('aria-pressed','true'); })
-    .catch(()=>{/*无动作：等待用户点击*/});
+/* === 页面加载时尝试自动播放 === */
+window.addEventListener('load', () => {
+  audio.play().then(() => {
+    musicBtn.textContent = '🔇 暂停';
+    musicBtn.setAttribute('aria-pressed', 'true');
+  }).catch(() => {
+    // 自动播放被阻止，不做处理，等待用户点击
+  });
 });
+
 
 /* 弹幕消息管理：随机抽取且无重复直到池空 */
 let pool = [];
@@ -375,3 +390,4 @@ window.addEventListener('beforeunload', ()=>{ if(loopTimer) clearInterval(loopTi
 </script>
 </body>
 </html>
+
