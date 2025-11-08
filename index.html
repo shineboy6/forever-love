@@ -80,7 +80,6 @@
 // [!GEMINI 终极修复]
 // 我们把所有代码都放进这个 'DOMContentLoaded' 事件里。
 // 这能保证 HTML 页面（按钮、画布等）完全加载完毕后，JS 才会开始运行。
-// 这将彻底解决 'Cannot read properties of null' 错误。
 document.addEventListener('DOMContentLoaded', () => {
 
     /* ---------------------
@@ -89,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
       - 双击打开文件或部署到静态服务器即可。
     ----------------------*/
 
-    /* 消息池（你提供的那些句子） */
+    /* 消息池 */
     const ORIGINAL_MESSAGES = [
       '贝贝，你在我眼中是最美。',
       '和你在一起仿佛世界被点亮了。',
@@ -111,23 +110,22 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     /* 配置 */
-    const DISPLAY_TIME = 7000;      // 每条消息停留 (ms)
-    const MAX_SIMULTANEOUS = 3;    // 屏幕上最多几条消息
-    const INITIAL_BURST = 6;       // 初始铺面条数
-    const BATCH_MIN = 2;           // 每次展示最少条数
-    const BATCH_MAX = 3;           // 每次展示最多条数
-    const TRY_POS_ATTEMPTS = 12;   // 找不重叠位置尝试次数
+    const DISPLAY_TIME = 7000;   
+    const MAX_SIMULTANEOUS = 3;   
+    const INITIAL_BURST = 6;      
+    const BATCH_MIN = 2;          
+    const BATCH_MAX = 3;          
+    const TRY_POS_ATTEMPTS = 12;   
 
     /* DOM */
-    // [!GEMINI 终极修复] 现在这些 DOM 元素一定能被找到了
     const barrage = document.getElementById('barrage');
     const sr = document.getElementById('sr');
     const musicBtn = document.getElementById('musicBtn');
     const pauseBtn = document.getElementById('pauseBtn');
-    const canvas = document.getElementById('bg'); // [!GEMINI 修复] 把 canvas 也移到这里
-    const ctx = canvas.getContext('2d');         // [!GEMINI 修复]
+    const canvas = document.getElementById('bg'); 
+    const ctx = canvas.getContext('2d');
 
-    /* 音乐：尝试加载同目录的 special_person.mp3 */
+    /* 音乐 */
     const audio = new Audio('./special_person.mp3');
     audio.preload = 'auto';
     audio.volume = 0.32;
@@ -139,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
       musicBtn.setAttribute('aria-pressed','false');
     });
 
-    /* 当页面允许自动播放失败时，用户点击播放按钮即可 */
     musicBtn.addEventListener('click', async ()=>{
       if (audio.paused && !audioPlayed) {
         try {
@@ -156,13 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    /* 尝试在加载时自动播放（多浏览器可能被阻止） */
     window.addEventListener('load', ()=>{
       audio.play().then(()=>{ musicBtn.textContent='🔇 暂停'; musicBtn.setAttribute('aria-pressed','true'); })
         .catch(()=>{/*无动作：等待用户点击*/});
     });
 
-    /* 弹幕消息管理：随机抽取且无重复直到池空 */
+    /* 弹幕消息管理 */
     let pool = [];
     function refillPool(){ pool = shuffle([...ORIGINAL_MESSAGES]); }
     function shuffle(arr){
@@ -174,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     refillPool();
 
-    /* 当前可见消息元素列表（用于碰撞检测） */
     function getVisibleRects(){
       return Array.from(barrage.children).filter(c=>c.dataset.dismiss!=='1').map(el=>{
         const r=el.getBoundingClientRect();
@@ -182,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    /* 检测与现有消息是否重叠（留出 margin） */
     function overlaps(x,y,w,h,existing,margin=8){
       for(const e of existing){
         if(!(x + w + margin < e.left || x > e.right + margin || y + h + margin < e.top || y > e.bottom + margin)){
@@ -192,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
 
-    /* [!GEMINI 优化] 修正了定位算法，防止在小屏幕上坐标为负 */
     function findPositionFor(el){
       const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
       const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
@@ -215,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
        };
     }
 
-    /* 创建并显示单条消息 */
     function showSingleMessage(text){
       const el = document.createElement('div');
       el.className = 'msg';
@@ -265,7 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    /* 生成柔和背景色（HSL） */
     function randomSoftBackground(){
       const h = Math.floor(330 + Math.random()*40); 
       const s = 70 + Math.floor(Math.random()*10);
@@ -273,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return `hsl(${h} ${s}% ${l}%)`;
     }
 
-    /* 展示一批消息（从池中抽取，不重复） */
     function showBatch(){
       if(paused) return;
       const currentVisible = barrage.children.length;
@@ -289,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    /* 初始快速铺面（开场） */
     function initialBurst(){
       let t = 120;
       for(let i=0;i<INITIAL_BURST;i++){
@@ -302,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    /* 循环节奏：每 2.6s 尝试一次展示（但会遵守并发上限和池状态），主循环 */
     let loopTimer = null;
     let paused = false;
     function startLoop(){
@@ -313,21 +301,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 2600);
     }
 
-    /* 暂停/继续 弹幕 */
     pauseBtn.addEventListener('click', ()=>{
       paused = !paused;
       pauseBtn.setAttribute('aria-pressed', String(paused));
       pauseBtn.textContent = paused ? '▶ 恢复弹幕' : '⏯ 暂停弹幕';
     });
 
-    /* 键盘快捷：空格切换弹幕暂停，M 清空屏读文本 */
     window.addEventListener('keydown', (e)=>{
       if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA')) return;
       if(e.code === 'Space'){ e.preventDefault(); paused = !paused; pauseBtn.setAttribute('aria-pressed', String(paused)); pauseBtn.textContent = paused ? '▶ 恢复弹幕' : '⏯ 暂停弹幕'; }
       if(e.key.toLowerCase() === 'm' && e.ctrlKey){ sr.textContent=''; }
     });
 
-    /* 背景花瓣 / 粒子 （简洁） */
+    /* 背景花瓣 */
     let W = canvas.width = innerWidth;
     let H = canvas.height = innerHeight;
     window.addEventListener('resize', ()=>{ W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
@@ -374,18 +360,14 @@ document.addEventListener('DOMContentLoaded', () => {
     startLoop();
     drawBg();
 
-    /* 自动开始音乐播放 */
     audio.addEventListener('error', (e)=> {
       musicBtn.textContent = '🎵 (文件未就绪)';
     });
 
-    /* 清理：当页面卸载，停止定时器 */
     window.addEventListener('beforeunload', ()=>{ if(loopTimer) clearInterval(loopTimer); });
 
-// [!GEMINI 终极修复] 确保括号闭合
 }); 
 </script>
 
 </body>
 </html>
-
