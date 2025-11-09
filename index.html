@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>程子洢 — 爱意满屏</title>
+<style>
+  :root {
+    --bg-1: #ffe6f0;
+    --bg-2: #ffd6e8;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --msg-color: #111112;
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    font-family: 'Segoe UI', 'PingFang SC', system-ui, sans-serif;
+    color: #333;
+    overflow: hidden;
+  }
+
+  /* 樱花背景 */
+  canvas#bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    display: block;
+  }
+
+  /* 心形 */
+  .center {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    pointer-events: none;
+    width: min(56vmin, 320px);
+    height: min(56vmin, 320px);
+    display: grid;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .heart-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 10px 25px rgba(255, 100, 150, 0.6));
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.96); filter: drop-shadow(0 0 10px rgba(255,120,160,0.4)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(255,140,180,0.6)); }
+    100% { transform: scale(0.96); filter: drop-shadow(0 0 10px rgba(255,120,160,0.4)); }
+  }
+
+  /* 弹幕 */
+  #barrage {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .msg {
+    position: absolute;
+    background: var(--card-bg);
+    color: var(--msg-color);
+    padding: 12px 14px;
+    border-radius: 16px;
+    max-width: 360px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .msg.show {
+    opacity: 1;
+    transform: scale(1);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="center">
+  <svg class="heart-svg" viewBox="0 0 100 100">
+    <defs>
+      <linearGradient id="g" x1="0" x2="1">
+        <stop offset="0%" stop-color="#ffb0c0"/>
+        <stop offset="100%" stop-color="#ff6a86"/>
+      </linearGradient>
+    </defs>
+    <g transform="translate(50,50) scale(0.9)">
+      <path d="M0 -22 C -12 -40 -40 -32 -40 -6 C -40 18 -4 36 0 46 C 4 36 40 18 40 -6 C 40 -32 12 -40 0 -22 Z"
+            fill="url(#g)"></path>
+    </g>
+  </svg>
+</div>
+
+<div id="barrage"></div>
+
+<script>
+/* ===== 弹幕池 ===== */
+const MESSAGES = [
+  '贝贝，你在我眼中是最美。',
+  '和你在一起仿佛世界被点亮了。',
+  '我想让你无时无刻都想和我在一起，就像我想你那样。',
+  '你不用担心我们的爱意会被时间消磨，因为每天醒来都会被注入更多爱意，只会越来越多。',
+  '我在乎的是你舒不舒服健不健康，而不是美不美瘦不瘦，所以希望你好好吃饭好好睡觉。',
+  '我爱你。',
+  '一生一世一双人，一心一意一个人。',
+  '因为你我相信我的未来一定会过得很好。',
+  '洢洢宝贝每天都开心。',
+  '缘定此生，缘定此人。',
+  '每一次心跳都是爱你的回响。',
+  '我俩天下第一好！',
+  '要这样一直幸福下去。',
+  '爱上了你，从此眼中再无他人。',
+  '爱人对我来说不是选择题，而是用心打磨后的填空。',
+  '程子洢，我想一直和你在一起。'
+];
+let pool = [];
+function refill(){ pool = [...MESSAGES].sort(()=>Math.random()-0.5); }
+
+/* ===== 弹幕逻辑 ===== */
+const barrage = document.getElementById('barrage');
+const DISPLAY_TIME = 7000, MAX_SHOW = 3;
+
+function showMsg(text){
+  const el = document.createElement('div');
+  el.className = 'msg';
+  el.textContent = text;
+  barrage.appendChild(el);
+  requestAnimationFrame(()=>{
+    const {x,y} = findPos(el);
+    el.style.left = x+'px';
+    el.style.top = y+'px';
+    el.style.background = randomBg();
+    el.classList.add('show');
+  });
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),400); }, DISPLAY_TIME);
+}
+
+function findPos(el){
+  const vw = innerWidth, vh = innerHeight;
+  const w = el.offsetWidth, h = el.offsetHeight;
+  return { x: Math.random()*(vw-w-40)+20, y: Math.random()*(vh-h-40)+20 };
+}
+
+function randomBg(){
+  const h = 330 + Math.random()*40, s = 70 + Math.random()*10, l = 88 - Math.random()*5;
+  return `hsl(${h} ${s}% ${l}%)`;
+}
+
+function showBatch(count){
+  for(let i=0;i<count;i++){
+    if(pool.length===0) refill();
+    showMsg(pool.pop());
+  }
+}
+
+/* ===== 启动时的“扑面而来”效果 ===== */
+refill();
+setTimeout(()=>{
+  showBatch(10); // 初始绽放10条
+}, 800);
+
+/* ===== 后续柔和节奏循环 ===== */
+setTimeout(()=>{
+  setInterval(()=>{
+    if(barrage.children.length >= MAX_SHOW) return;
+    const count = 1 + Math.floor(Math.random()*2); // 1~2条
+    showBatch(count);
+  }, 2800);
+}, 6000);
+
+/* ===== 背景樱花 ===== */
+const canvas=document.getElementById('bg'),ctx=canvas.getContext('2d');
+let W=canvas.width=innerWidth,H=canvas.height=innerHeight;
+window.addEventListener('resize',()=>{W=canvas.width=innerWidth;H=canvas.height=innerHeight;});
+const petals=Array.from({length:50},()=>makePetal());
+function makePetal(){
+  return {x:Math.random()*W,y:Math.random()*H,r:6+Math.random()*10,vx:-0.3+Math.random()*0.6,vy:0.2+Math.random()*0.8,rot:Math.random()*Math.PI*2,rotSpeed:(Math.random()-0.5)*0.02,hue:330+Math.random()*30,alpha:0.6+Math.random()*0.3};
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  for(const p of petals){
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+    ctx.fillStyle=`hsla(${p.hue},70%,85%,${p.alpha})`;
+    ctx.beginPath();ctx.ellipse(0,0,p.r*0.9,p.r*0.6,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    p.x+=p.vx+Math.sin(p.y/30)*0.2;p.y+=p.vy;p.rot+=p.rotSpeed;
+    if(p.y>H+20){Object.assign(p,makePetal());p.y=-20;p.x=Math.random()*W;}
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
