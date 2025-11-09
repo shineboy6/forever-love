@@ -126,16 +126,12 @@ const MESSAGES = [
   '我俩天下第一好！',
   '要这样一直幸福下去。',
   '爱上了你，从此眼中再无他人。',
-  '爱人对我来说不是选择题，而是用心打磨后的填空，心上有了你就已经交卷了，我希望你也是。',
+  '爱人对我来说不是选择题，而是用心打磨后的填空。',
   '程子洢，我想一直和你在一起。',
   '有橙子在身边真是太好了！',
   '谢谢你愿意听我说话和我沟通，我相信爱能抵万难，我们会越来越好。',
   '以前经常幻想的未来生活中的女主角有了具体的形象。',
-  '我愿意再多了解你，知道你的一切，直到我们成为对方生命中不可或缺的一部分。',
-  '我愿意付出全部真心对你，因为我知道你也是这样。',
-  '以前我是一个摆烂的人，我的生活就只是活下去，对未来没有多少期待，但是现在有了，想要和你一起过得更好。',
-  '积攒了那么多的情话，想慢慢说给你听。',
-  '爱你，爱的是全部的你，所以大胆做自己吧。'
+  '我愿意再多了解你，直到我们成为对方生命中不可或缺的一部分。'
 ];
 
 let pool = [];
@@ -146,7 +142,7 @@ function refill() {
 /* ===== 弹幕逻辑 ===== */
 const barrage = document.getElementById('barrage');
 const DISPLAY_TIME = 7000;
-const MAX_SHOW = 4; // 同屏最多4条
+const BATCH_SIZE = 4; // 同屏数量
 const SAFE_MARGIN = 40;
 
 function showMsg(text, existingPositions = []) {
@@ -209,25 +205,73 @@ function randomBg() {
 function showBatch(count) {
   const positions = [];
   for (let i = 0; i < count; i++) {
-    if (pool.length === 0) refill();
+    if (pool.length === 0) return;
     const msg = pool.pop();
     showMsg(msg, positions);
   }
 }
 
-/* ===== 初始“扑面而来”效果 ===== */
-refill();
-setTimeout(() => {
-  showBatch(10); // 首次绽放10条
-}, 800);
+/* ===== 提示文字 ===== */
+function showHint() {
+  const hint = document.createElement('div');
+  hint.textContent = '所有情话都说完啦，重新开始咯 ❤️';
+  hint.style.position = 'fixed';
+  hint.style.left = '50%';
+  hint.style.top = '50%';
+  hint.style.transform = 'translate(-50%, -50%)';
+  hint.style.background = 'rgba(255,255,255,0.9)';
+  hint.style.color = '#c02760';
+  hint.style.padding = '16px 24px';
+  hint.style.borderRadius = '20px';
+  hint.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
+  hint.style.fontSize = '20px';
+  hint.style.fontWeight = '600';
+  hint.style.opacity = '0';
+  hint.style.transition = 'opacity 1.5s ease';
+  hint.style.zIndex = '10';
+  document.body.appendChild(hint);
 
-/* ===== 循环播放逻辑 ===== */
+  requestAnimationFrame(() => {
+    hint.style.opacity = '1';
+  });
+
+  setTimeout(() => {
+    hint.style.opacity = '0';
+    setTimeout(() => hint.remove(), 2000);
+  }, 4000);
+}
+
+/* ===== 弹幕调度循环 ===== */
+function startLoop() {
+  refill();
+  let index = 0;
+
+  function nextBatch() {
+    if (index >= MESSAGES.length) {
+      showHint();
+      setTimeout(() => {
+        refill();
+        index = 0;
+        nextBatch();
+      }, 6000);
+      return;
+    }
+
+    showBatch(BATCH_SIZE);
+    index += BATCH_SIZE;
+
+    setTimeout(nextBatch, DISPLAY_TIME);
+  }
+
+  nextBatch();
+}
+
+/* ===== 初始“扑面而来”效果 ===== */
 setTimeout(() => {
-  setInterval(() => {
-    if (barrage.children.length >= MAX_SHOW) return;
-    showBatch(3); // 每次出现3条，互不重叠
-  }, DISPLAY_TIME);
-}, 8000);
+  refill();
+  showBatch(10); // 初始绽放10条
+  setTimeout(startLoop, 9000); // 9秒后进入循环
+}, 800);
 
 /* ===== 背景樱花 ===== */
 const canvas = document.getElementById('bg'),
@@ -276,8 +320,6 @@ function draw() {
 }
 draw();
 </script>
-
 </body>
 </html>
-
 
