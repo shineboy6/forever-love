@@ -126,93 +126,158 @@ const MESSAGES = [
   '我俩天下第一好！',
   '要这样一直幸福下去。',
   '爱上了你，从此眼中再无他人。',
-  '爱人对我来说不是选择题，而是用心打磨后的填空。',
-  '程子洢，我想一直和你在一起。'
-  '有橙子在身边真是太好了！'
-  '谢谢你愿意听我说话和我沟通，我相信爱能抵万难，我们会越来越好。'
-  '以前经常幻想的未来生活中的女主角有了具体的形象'
-  '我愿意再多了解你，知道你的一切，直到我们成为对方生命中不可或缺的一部分'
-  '我愿意付出全部真心对你，因为我知道你也是这样'
-  '以前我是一个摆烂的人，我的生活就只是活下去，对未来没有多少期待，但是现在有了，想要和你一起过得更好'
-  '积攒了那么多的情话，想慢慢说给你听'
-  '爱你，爱的是全部的你，所以大胆做自己吧'
+  '爱人对我来说不是选择题，而是用心打磨后的填空，心上有了你就已经交卷了，我希望你也是。',
+  '程子洢，我想一直和你在一起。',
+  '有橙子在身边真是太好了！',
+  '谢谢你愿意听我说话和我沟通，我相信爱能抵万难，我们会越来越好。',
+  '以前经常幻想的未来生活中的女主角有了具体的形象。',
+  '我愿意再多了解你，知道你的一切，直到我们成为对方生命中不可或缺的一部分。',
+  '我愿意付出全部真心对你，因为我知道你也是这样。',
+  '以前我是一个摆烂的人，我的生活就只是活下去，对未来没有多少期待，但是现在有了，想要和你一起过得更好。',
+  '积攒了那么多的情话，想慢慢说给你听。',
+  '爱你，爱的是全部的你，所以大胆做自己吧。'
 ];
+
 let pool = [];
-function refill(){ pool = [...MESSAGES].sort(()=>Math.random()-0.5); }
+function refill() {
+  pool = [...MESSAGES].sort(() => Math.random() - 0.5);
+}
 
 /* ===== 弹幕逻辑 ===== */
 const barrage = document.getElementById('barrage');
-const DISPLAY_TIME = 7000, MAX_SHOW = 3;
+const DISPLAY_TIME = 7000;
+const MAX_SHOW = 4; // 同屏最多4条
+const SAFE_MARGIN = 40;
 
-function showMsg(text){
+function showMsg(text, existingPositions = []) {
   const el = document.createElement('div');
   el.className = 'msg';
   el.textContent = text;
   barrage.appendChild(el);
-  requestAnimationFrame(()=>{
-    const {x,y} = findPos(el);
-    el.style.left = x+'px';
-    el.style.top = y+'px';
+
+  requestAnimationFrame(() => {
+    const { x, y } = findNonOverlapPos(el, existingPositions);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
     el.style.background = randomBg();
     el.classList.add('show');
   });
-  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),400); }, DISPLAY_TIME);
+
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 400);
+  }, DISPLAY_TIME);
 }
 
-function findPos(el){
-  const vw = innerWidth, vh = innerHeight;
-  const w = el.offsetWidth, h = el.offsetHeight;
-  return { x: Math.random()*(vw-w-40)+20, y: Math.random()*(vh-h-40)+20 };
+function findNonOverlapPos(el, existingPositions) {
+  const vw = innerWidth;
+  const vh = innerHeight;
+  const w = el.offsetWidth;
+  const h = el.offsetHeight;
+
+  let tries = 0;
+  while (tries < 100) {
+    const x = Math.random() * (vw - w - SAFE_MARGIN * 2) + SAFE_MARGIN;
+    const y = Math.random() * (vh - h - SAFE_MARGIN * 2) + SAFE_MARGIN;
+    const rect = { x, y, w, h };
+
+    if (!existingPositions.some(r => overlap(rect, r))) {
+      existingPositions.push(rect);
+      return { x, y };
+    }
+    tries++;
+  }
+  return { x: Math.random() * (vw - w), y: Math.random() * (vh - h) };
 }
 
-function randomBg(){
-  const h = 330 + Math.random()*40, s = 70 + Math.random()*10, l = 88 - Math.random()*5;
+function overlap(a, b) {
+  return (
+    a.x < b.x + b.w + SAFE_MARGIN &&
+    a.x + a.w + SAFE_MARGIN > b.x &&
+    a.y < b.y + b.h + SAFE_MARGIN &&
+    a.y + a.h + SAFE_MARGIN > b.y
+  );
+}
+
+function randomBg() {
+  const h = 330 + Math.random() * 40;
+  const s = 70 + Math.random() * 10;
+  const l = 88 - Math.random() * 5;
   return `hsl(${h} ${s}% ${l}%)`;
 }
 
-function showBatch(count){
-  for(let i=0;i<count;i++){
-    if(pool.length===0) refill();
-    showMsg(pool.pop());
+function showBatch(count) {
+  const positions = [];
+  for (let i = 0; i < count; i++) {
+    if (pool.length === 0) refill();
+    const msg = pool.pop();
+    showMsg(msg, positions);
   }
 }
 
-/* ===== 启动时的“扑面而来”效果 ===== */
+/* ===== 初始“扑面而来”效果 ===== */
 refill();
-setTimeout(()=>{
-  showBatch(10); // 初始绽放10条
+setTimeout(() => {
+  showBatch(10); // 首次绽放10条
 }, 800);
 
-/* ===== 后续柔和节奏循环 ===== */
-setTimeout(()=>{
-  setInterval(()=>{
-    if(barrage.children.length >= MAX_SHOW) return;
-    const count = 1 + Math.floor(Math.random()*2); // 1~2条
-    showBatch(count);
-  }, 2800);
-}, 6000);
+/* ===== 循环播放逻辑 ===== */
+setTimeout(() => {
+  setInterval(() => {
+    if (barrage.children.length >= MAX_SHOW) return;
+    showBatch(3); // 每次出现3条，互不重叠
+  }, DISPLAY_TIME);
+}, 8000);
 
 /* ===== 背景樱花 ===== */
-const canvas=document.getElementById('bg'),ctx=canvas.getContext('2d');
-let W=canvas.width=innerWidth,H=canvas.height=innerHeight;
-window.addEventListener('resize',()=>{W=canvas.width=innerWidth;H=canvas.height=innerHeight;});
-const petals=Array.from({length:50},()=>makePetal());
-function makePetal(){
-  return {x:Math.random()*W,y:Math.random()*H,r:6+Math.random()*10,vx:-0.3+Math.random()*0.6,vy:0.2+Math.random()*0.8,rot:Math.random()*Math.PI*2,rotSpeed:(Math.random()-0.5)*0.02,hue:330+Math.random()*30,alpha:0.6+Math.random()*0.3};
+const canvas = document.getElementById('bg'),
+  ctx = canvas.getContext('2d');
+let W = (canvas.width = innerWidth),
+  H = (canvas.height = innerHeight);
+window.addEventListener('resize', () => {
+  W = canvas.width = innerWidth;
+  H = canvas.height = innerHeight;
+});
+const petals = Array.from({ length: 50 }, () => makePetal());
+function makePetal() {
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: 6 + Math.random() * 10,
+    vx: -0.3 + Math.random() * 0.6,
+    vy: 0.2 + Math.random() * 0.8,
+    rot: Math.random() * Math.PI * 2,
+    rotSpeed: (Math.random() - 0.5) * 0.02,
+    hue: 330 + Math.random() * 30,
+    alpha: 0.6 + Math.random() * 0.3,
+  };
 }
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  for(const p of petals){
-    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
-    ctx.fillStyle=`hsla(${p.hue},70%,85%,${p.alpha})`;
-    ctx.beginPath();ctx.ellipse(0,0,p.r*0.9,p.r*0.6,0,0,Math.PI*2);ctx.fill();ctx.restore();
-    p.x+=p.vx+Math.sin(p.y/30)*0.2;p.y+=p.vy;p.rot+=p.rotSpeed;
-    if(p.y>H+20){Object.assign(p,makePetal());p.y=-20;p.x=Math.random()*W;}
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  for (const p of petals) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = `hsla(${p.hue},70%,85%,${p.alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.r * 0.9, p.r * 0.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    p.x += p.vx + Math.sin(p.y / 30) * 0.2;
+    p.y += p.vy;
+    p.rot += p.rotSpeed;
+    if (p.y > H + 20) {
+      Object.assign(p, makePetal());
+      p.y = -20;
+      p.x = Math.random() * W;
+    }
   }
   requestAnimationFrame(draw);
 }
 draw();
 </script>
+
 </body>
 </html>
+
 
